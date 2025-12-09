@@ -1,4 +1,6 @@
 const storageKey = 'todoStack';
+const basePlaceholder = 'What do you want to do?';
+const emptyPlaceholder = '(No todos) What do you want to do?';
 let stack = loadStack();
 let editingId = null;
 let pendingCaret = null;
@@ -61,8 +63,16 @@ function focusInputWithCaret(input, id) {
 }
 
 function saveStack() {
+  ensureTodoExists();
   localStorage.setItem(storageKey, JSON.stringify(stack));
   render();
+}
+
+function ensureTodoExists() {
+  if (stack.length) return;
+  const todo = createTodo('');
+  stack.unshift(todo);
+  editingId = todo.id;
 }
 
 function createTodo(title = '') {
@@ -93,9 +103,17 @@ function markDone(id) {
 function updateTitle(id, newTitle) {
   const item = stack.find((t) => t.id === id);
   if (item) {
-    item.title = newTitle.trim() || 'Untitled';
+    item.title = newTitle.trim();
     saveStack();
   }
+}
+
+function getPlaceholder(isEmptyState = false) {
+  return isEmptyState ? emptyPlaceholder : basePlaceholder;
+}
+
+function isStackPlaceholderState() {
+  return stack.length === 1 && !(stack[0].title || '').trim();
 }
 
 function switchView(target) {
@@ -110,7 +128,7 @@ function renderMainView() {
   const top = stack[0];
   if (!top) {
     topCard.classList.add('placeholder');
-    topCard.innerHTML = 'No todos yet. Add one!';
+    topCard.innerHTML = getPlaceholder(true);
     return;
   }
   topCard.classList.remove('placeholder');
@@ -129,7 +147,7 @@ function renderMainView() {
     const input = document.createElement('input');
     input.type = 'text';
     input.value = top.title;
-    input.placeholder = 'What do you want to do?';
+    input.placeholder = getPlaceholder(isStackPlaceholderState());
     input.addEventListener('blur', () => finishEdit(top.id, input.value));
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
@@ -140,7 +158,11 @@ function renderMainView() {
     titleEl.appendChild(input);
     focusInputWithCaret(input, top.id);
   } else {
-    titleEl.textContent = top.title;
+    const displayTitle = top.title.trim()
+      ? top.title
+      : getPlaceholder(isStackPlaceholderState());
+    titleEl.textContent = displayTitle;
+    titleEl.classList.toggle('placeholder-text', !top.title.trim());
     titleEl.addEventListener('click', (e) => {
       const offset = getCaretOffsetFromClick(titleEl, e);
       editingId = top.id;
@@ -180,7 +202,7 @@ function renderListView() {
       const input = document.createElement('input');
       input.type = 'text';
       input.value = todo.title;
-      input.placeholder = 'What do you want to do?';
+      input.placeholder = getPlaceholder(isStackPlaceholderState());
       input.addEventListener('blur', () => finishEdit(todo.id, input.value));
       input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
@@ -191,7 +213,11 @@ function renderListView() {
       title.appendChild(input);
       focusInputWithCaret(input, todo.id);
     } else {
-      title.textContent = todo.title;
+      const displayTitle = todo.title.trim()
+        ? todo.title
+        : getPlaceholder(isStackPlaceholderState());
+      title.textContent = displayTitle;
+      title.classList.toggle('placeholder-text', !todo.title.trim());
       title.addEventListener('click', (e) => {
         const offset = getCaretOffsetFromClick(title, e);
         editingId = todo.id;
@@ -313,7 +339,26 @@ function render() {
   renderListView();
 }
 
+function setupShortcuts() {
+  document.addEventListener('keydown', (e) => {
+    if (editingId) return;
+    if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+    if (e.key.toLowerCase() === 'n') {
+      e.preventDefault();
+      addTodo(true);
+    }
+  });
+}
+
 addButton.addEventListener('click', () => addTodo(true));
 setupMenu();
 setupNav();
-render();
+setupShortcuts();
+const hadInitialTodos = stack.length > 0;
+ensureTodoExists();
+
+if (!hadInitialTodos) {
+  saveStack();
+} else {
+  render();
+}
