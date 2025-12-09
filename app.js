@@ -136,6 +136,7 @@ function renderMainView() {
 
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
+  checkbox.title = 'Mark as Done';
   checkbox.className = 'checkbox';
   checkbox.addEventListener('change', () => markDone(top.id));
 
