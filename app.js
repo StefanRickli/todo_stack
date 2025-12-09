@@ -42,7 +42,7 @@ function createTodo(title = '') {
 }
 
 function addTodo(openEdit = false) {
-  const todo = createTodo('New todo');
+  const todo = createTodo('');
   stack.unshift(todo);
   editingId = openEdit ? todo.id : null;
   saveStack();
@@ -96,6 +96,7 @@ function renderMainView() {
     const input = document.createElement('input');
     input.type = 'text';
     input.value = top.title;
+    input.placeholder = 'What do you want to do?';
     input.addEventListener('blur', () => finishEdit(top.id, input.value));
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
@@ -144,6 +145,7 @@ function renderListView() {
       const input = document.createElement('input');
       input.type = 'text';
       input.value = todo.title;
+      input.placeholder = 'What do you want to do?';
       input.addEventListener('blur', () => finishEdit(todo.id, input.value));
       input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
