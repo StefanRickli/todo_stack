@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Todo Stack</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="top-bar">
+    <div class="logo">Todo Stack</div>
+    <nav class="view-switch">
+      <button id="mainViewBtn" class="tab active" aria-label="Main view">Main</button>
+      <button id="listViewBtn" class="tab" aria-label="List view">List</button>
+    </nav>
+    <div class="menu">
+      <button id="menuButton" class="icon-button" aria-label="Open menu" aria-haspopup="true">&#9776;</button>
+      <div id="menuDropdown" class="dropdown" role="menu" aria-hidden="true">
+        <button data-action="import" role="menuitem">Import JSON</button>
+        <button data-action="export" role="menuitem">Export JSON</button>
+        <button data-action="clear" role="menuitem" class="danger">Clear stack</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="mainView" class="view active">
+      <div id="topCard" class="card placeholder">No todos yet. Add one!</div>
+    </section>
+
+    <section id="listView" class="view">
+      <ul id="todoList" class="list"></ul>
+      <div id="emptyList" class="empty">No todos in the stack.</div>
+    </section>
+  </main>
+
+  <button id="addButton" class="add-button" aria-label="Add todo">+</button>
+
+  <dialog id="modal" class="modal">
+    <form method="dialog" class="modal-content">
+      <header class="modal-header">
+        <h2 id="modalTitle">Modal</h2>
+        <button type="submit" aria-label="Close" class="icon-button">×</button>
+      </header>
+      <div class="modal-body">
+        <label class="modal-label" for="modalTextarea">Stack JSON</label>
+        <textarea id="modalTextarea" class="modal-textarea" rows="10"></textarea>
+        <a
+          id="sourceLink"
+          class="modal-link"
+          href="https://github.com/your-username/todo_stack"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          View source on GitHub
+        </a>
+        <div class="modal-actions">
+          <button type="button" id="modalConfirm" class="primary">Confirm</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
