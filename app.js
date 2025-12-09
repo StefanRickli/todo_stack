@@ -1,6 +1,6 @@
 const storageKey = 'todoStack';
 const basePlaceholder = 'What do you want to do?';
-const emptyPlaceholder = '(No todos) What do you want to do?';
+const emptyPlaceholder = 'Quite empty here... Click here to add your first todo 🫶';
 let stack = loadStack();
 let editingId = null;
 let pendingCaret = null;
