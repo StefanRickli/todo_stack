@@ -136,7 +136,7 @@ function renderMainView() {
 
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
-  checkbox.title = 'Mark as Done';
+  checkbox.title = 'Mark as Done [Delete]';
   checkbox.className = 'checkbox';
   checkbox.addEventListener('change', () => markDone(top.id));
 
@@ -347,6 +347,13 @@ function setupShortcuts() {
     if (e.key.toLowerCase() === 'n') {
       e.preventDefault();
       addTodo(true);
+    }
+    if (e.key === 'Delete') {
+      e.preventDefault();
+      const top = stack[0];
+      if (top) {
+        markDone(top.id);
+      }
     }
   });
 }
