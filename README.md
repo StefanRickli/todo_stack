@@ -1,7 +1,7 @@
 # Todo Stack
 
 ## Live Web App
-[👉 Open the hosted Todo Stack](https://your-username.github.io/todo_stack/)
+[👉 Open the hosted Todo Stack](https://stefanrickli.github.io/todo_stack/)
 
 A minimal browser-only todo stack app built with plain HTML, CSS, and JavaScript. All todos live in `localStorage`, and the most recent item always sits on top of the stack.
 
