@@ -136,7 +136,7 @@ function renderMainView() {
 
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
-  checkbox.title = 'Mark as Done [Delete]';
+  checkbox.title = 'Mark as Done [d/Delete]';
   checkbox.className = 'checkbox';
   checkbox.addEventListener('change', () => markDone(top.id));
 
@@ -151,7 +151,7 @@ function renderMainView() {
     input.placeholder = getPlaceholder(isStackPlaceholderState());
     input.addEventListener('blur', () => finishEdit(top.id, input.value));
     input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
+      if (e.key === 'Enter' || e.key === 'Escape') {
         e.preventDefault();
         input.blur();
       }
@@ -344,11 +344,11 @@ function setupShortcuts() {
   document.addEventListener('keydown', (e) => {
     if (editingId) return;
     if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
-    if (e.key.toLowerCase() === 'n') {
+    if (e.key.toLowerCase() === 'n' || e.key === 'Enter') {
       e.preventDefault();
       addTodo(true);
     }
-    if (e.key === 'Delete') {
+    if (e.key.toLowerCase() === 'd' || e.key === 'Delete') {
       e.preventDefault();
       const top = stack[0];
       if (top) {
