@@ -1,6 +1,7 @@
 const storageKey = 'todoStack';
 let stack = loadStack();
 let editingId = null;
+let pendingCaret = null;
 
 const mainView = document.getElementById('mainView');
 const listView = document.getElementById('listView');
@@ -25,6 +26,38 @@ function loadStack() {
     console.error('Failed to parse stored stack', e);
   }
   return [];
+}
+
+function getCaretOffsetFromClick(target, event) {
+  const text = target.textContent || '';
+  if (!text) return 0;
+
+  if (document.caretRangeFromPoint) {
+    const range = document.caretRangeFromPoint(event.clientX, event.clientY);
+    if (range && range.startContainer.nodeType === Node.TEXT_NODE) {
+      return range.startOffset;
+    }
+  }
+
+  if (document.caretPositionFromPoint) {
+    const position = document.caretPositionFromPoint(event.clientX, event.clientY);
+    if (position && position.offset !== undefined) {
+      return position.offset;
+    }
+  }
+
+  return text.length;
+}
+
+function focusInputWithCaret(input, id) {
+  queueMicrotask(() => {
+    input.focus();
+    if (pendingCaret && pendingCaret.id === id) {
+      const pos = Math.min(input.value.length, Math.max(0, pendingCaret.offset));
+      input.setSelectionRange(pos, pos);
+      pendingCaret = null;
+    }
+  });
 }
 
 function saveStack() {
@@ -105,11 +138,13 @@ function renderMainView() {
       }
     });
     titleEl.appendChild(input);
-    queueMicrotask(() => input.focus());
+    focusInputWithCaret(input, top.id);
   } else {
     titleEl.textContent = top.title;
-    titleEl.addEventListener('click', () => {
+    titleEl.addEventListener('click', (e) => {
+      const offset = getCaretOffsetFromClick(titleEl, e);
       editingId = top.id;
+      pendingCaret = { id: top.id, offset };
       render();
     });
   }
@@ -154,11 +189,13 @@ function renderListView() {
         }
       });
       title.appendChild(input);
-      queueMicrotask(() => input.focus());
+      focusInputWithCaret(input, todo.id);
     } else {
       title.textContent = todo.title;
-      title.addEventListener('click', () => {
+      title.addEventListener('click', (e) => {
+        const offset = getCaretOffsetFromClick(title, e);
         editingId = todo.id;
+        pendingCaret = { id: todo.id, offset };
         render();
       });
     }
@@ -193,6 +230,7 @@ function reorder(from, to) {
 
 function finishEdit(id, value) {
   editingId = null;
+  pendingCaret = null;
   updateTitle(id, value);
 }
 
