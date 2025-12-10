@@ -81,7 +81,7 @@ function saveStack() {
 }
 
 function ensureTodoExists() {
-  if (stack.length) return;
+  if (getActiveTodos().length) return;
   const todo = createTodo('');
   stack.unshift(todo);
   editingId = todo.id;
@@ -101,6 +101,17 @@ function addTodo(openEdit = false) {
   const todo = createTodo('');
   stack.unshift(todo);
   editingId = openEdit ? todo.id : null;
+  saveStack();
+}
+
+function deleteTodo(id) {
+  const index = stack.findIndex((t) => t.id === id);
+  if (index === -1) return;
+  stack.splice(index, 1);
+  if (editingId === id) {
+    editingId = null;
+    pendingCaret = null;
+  }
   saveStack();
 }
 
@@ -249,8 +260,19 @@ function renderListView() {
       });
     }
 
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'icon-button delete-button';
+    deleteBtn.title = 'Delete [Shift+Delete]';
+    deleteBtn.textContent = '🗑';
+    deleteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      deleteTodo(todo.id);
+    });
+
     li.appendChild(checkbox);
     li.appendChild(title);
+    li.appendChild(deleteBtn);
 
     li.addEventListener('dragstart', (e) => {
       li.classList.add('dragging');
@@ -272,9 +294,7 @@ function renderListView() {
 
 function renderDoneView() {
   doneList.innerHTML = '';
-  const doneTodos = getDoneTodos()
-    .slice()
-    .sort((a, b) => new Date(b.doneAt || b.createdAt) - new Date(a.doneAt || a.createdAt));
+  const doneTodos = getSortedDoneTodos();
 
   const formatDoneAt = (iso) => {
     if (!iso) return '';
@@ -335,6 +355,16 @@ function renderDoneView() {
       });
     }
 
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'icon-button delete-button';
+    deleteBtn.title = 'Delete [Shift+Delete]';
+    deleteBtn.textContent = '🗑';
+    deleteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      deleteTodo(todo.id);
+    });
+
     li.appendChild(checkbox);
     li.appendChild(title);
 
@@ -342,6 +372,7 @@ function renderDoneView() {
     doneTime.className = 'done-time';
     doneTime.textContent = formatDoneAt(todo.doneAt || todo.createdAt);
     li.appendChild(doneTime);
+    li.appendChild(deleteBtn);
     doneList.appendChild(li);
   });
 }
@@ -357,6 +388,12 @@ function reorder(from, to) {
   const [item] = stack.splice(fromIndex, 1);
   stack.splice(toIndex, 0, item);
   saveStack();
+}
+
+function getSortedDoneTodos() {
+  return getDoneTodos()
+    .slice()
+    .sort((a, b) => new Date(b.doneAt || b.createdAt) - new Date(a.doneAt || a.createdAt));
 }
 
 function finishEdit(id, value) {
@@ -455,7 +492,18 @@ function setupShortcuts() {
       e.preventDefault();
       addTodo(true);
     }
-    if (e.key.toLowerCase() === 'd' || e.key === 'Delete') {
+    if (e.shiftKey && e.key === 'Delete') {
+      e.preventDefault();
+      const activeView = document.querySelector('.view.active');
+      const viewId = activeView?.id;
+      const targetTodo =
+        viewId === 'doneView'
+          ? getSortedDoneTodos()[0]
+          : getActiveTodos()[0];
+      if (targetTodo) {
+        deleteTodo(targetTodo.id);
+      }
+    } else if (e.key.toLowerCase() === 'd' || e.key === 'Delete') {
       e.preventDefault();
       const top = getActiveTodos()[0];
       if (top) {

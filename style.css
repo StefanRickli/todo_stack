@@ -195,6 +195,20 @@ main {
   text-align: right;
 }
 
+.delete-button {
+  color: #cbd5e1;
+  font-size: 18px;
+  margin-left: 10px;
+  padding: 6px;
+  cursor: pointer;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.delete-button:hover {
+  color: #ef4444;
+  transform: translateY(-1px);
+}
+
 .title.placeholder-text {
   color: var(--muted);
 }
