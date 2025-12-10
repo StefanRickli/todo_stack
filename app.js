@@ -490,7 +490,14 @@ function setupShortcuts() {
     if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
     if (e.key.toLowerCase() === 'n' || e.key === 'Enter') {
       e.preventDefault();
-      addTodo(true);
+      const top = getActiveTodos()[0];
+      if (top && !(top.title || '').trim()) {
+        editingId = top.id;
+        pendingCaret = { id: top.id, offset: (top.title || '').length };
+        render();
+      } else {
+        addTodo(true);
+      }
     }
     if (e.shiftKey && e.key === 'Delete') {
       e.preventDefault();
