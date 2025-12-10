@@ -7,11 +7,15 @@ let pendingCaret = null;
 
 const mainView = document.getElementById('mainView');
 const listView = document.getElementById('listView');
+const doneView = document.getElementById('doneView');
 const mainViewBtn = document.getElementById('mainViewBtn');
 const listViewBtn = document.getElementById('listViewBtn');
+const doneViewBtn = document.getElementById('doneViewBtn');
 const topCard = document.getElementById('topCard');
 const todoList = document.getElementById('todoList');
 const emptyList = document.getElementById('emptyList');
+const doneList = document.getElementById('doneList');
+const emptyDone = document.getElementById('emptyDone');
 const addButton = document.getElementById('addButton');
 const menuButton = document.getElementById('menuButton');
 const menuDropdown = document.getElementById('menuDropdown');
@@ -28,6 +32,14 @@ function loadStack() {
     console.error('Failed to parse stored stack', e);
   }
   return [];
+}
+
+function getActiveTodos() {
+  return stack.filter((t) => !t.done);
+}
+
+function getDoneTodos() {
+  return stack.filter((t) => t.done);
 }
 
 function getCaretOffsetFromClick(target, event) {
@@ -81,6 +93,7 @@ function createTodo(title = '') {
     title,
     createdAt: new Date().toISOString(),
     done: false,
+    doneAt: null,
   };
 }
 
@@ -91,11 +104,12 @@ function addTodo(openEdit = false) {
   saveStack();
 }
 
-function markDone(id) {
-  const index = stack.findIndex((t) => t.id === id);
-  if (index >= 0) {
-    stack[index].done = true;
-    stack.splice(index, 1);
+function setDoneState(id, done) {
+  const item = stack.find((t) => t.id === id);
+  if (item) {
+    const wasDone = item.done;
+    item.done = done;
+    item.doneAt = done ? (item.doneAt && wasDone ? item.doneAt : new Date().toISOString()) : null;
     saveStack();
   }
 }
@@ -113,19 +127,24 @@ function getPlaceholder(isEmptyState = false) {
 }
 
 function isStackPlaceholderState() {
-  return stack.length === 1 && !(stack[0].title || '').trim();
+  const active = getActiveTodos();
+  return active.length === 1 && !(active[0].title || '').trim();
 }
 
 function switchView(target) {
   const isMain = target === 'main';
+  const isList = target === 'list';
+  const isDone = target === 'done';
   mainView.classList.toggle('active', isMain);
-  listView.classList.toggle('active', !isMain);
+  listView.classList.toggle('active', isList);
+  doneView.classList.toggle('active', isDone);
   mainViewBtn.classList.toggle('active', isMain);
-  listViewBtn.classList.toggle('active', !isMain);
+  listViewBtn.classList.toggle('active', isList);
+  doneViewBtn.classList.toggle('active', isDone);
 }
 
 function renderMainView() {
-  const top = stack[0];
+  const top = getActiveTodos()[0];
   if (!top) {
     topCard.classList.add('placeholder');
     topCard.innerHTML = getPlaceholder(true);
@@ -138,7 +157,8 @@ function renderMainView() {
   checkbox.type = 'checkbox';
   checkbox.title = 'Mark as Done [d/Delete]';
   checkbox.className = 'checkbox';
-  checkbox.addEventListener('change', () => markDone(top.id));
+  checkbox.checked = top.done;
+  checkbox.addEventListener('change', () => setDoneState(top.id, checkbox.checked));
 
   const titleEl = document.createElement('div');
   titleEl.className = 'title';
@@ -178,14 +198,15 @@ function renderMainView() {
 
 function renderListView() {
   todoList.innerHTML = '';
+  const activeTodos = getActiveTodos();
 
-  if (!stack.length) {
+  if (!activeTodos.length) {
     emptyList.style.display = 'block';
     return;
   }
   emptyList.style.display = 'none';
 
-  stack.forEach((todo, index) => {
+  activeTodos.forEach((todo, index) => {
     const li = document.createElement('li');
     li.className = 'list-item';
     li.draggable = true;
@@ -194,7 +215,8 @@ function renderListView() {
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.className = 'checkbox';
-    checkbox.addEventListener('change', () => markDone(todo.id));
+    checkbox.checked = todo.done;
+    checkbox.addEventListener('change', () => setDoneState(todo.id, checkbox.checked));
 
     const title = document.createElement('div');
     title.className = 'title';
@@ -248,10 +270,92 @@ function renderListView() {
   });
 }
 
+function renderDoneView() {
+  doneList.innerHTML = '';
+  const doneTodos = getDoneTodos()
+    .slice()
+    .sort((a, b) => new Date(b.doneAt || b.createdAt) - new Date(a.doneAt || a.createdAt));
+
+  const formatDoneAt = (iso) => {
+    if (!iso) return '';
+    const date = new Date(iso);
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const time = `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+    const isToday =
+      date.getFullYear() === now.getFullYear() &&
+      date.getMonth() === now.getMonth() &&
+      date.getDate() === now.getDate();
+    if (isToday) return time;
+    return `${pad(date.getDate())}.${pad(date.getMonth() + 1)}, ${time}`;
+  };
+
+  if (!doneTodos.length) {
+    emptyDone.style.display = 'block';
+    return;
+  }
+  emptyDone.style.display = 'none';
+
+  doneTodos.forEach((todo) => {
+    const li = document.createElement('li');
+    li.className = 'list-item';
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className = 'checkbox';
+    checkbox.checked = true;
+    checkbox.addEventListener('change', () => setDoneState(todo.id, checkbox.checked));
+
+    const title = document.createElement('div');
+    title.className = 'title';
+
+    if (editingId === todo.id) {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = todo.title;
+      input.placeholder = getPlaceholder();
+      input.addEventListener('blur', () => finishEdit(todo.id, input.value));
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          input.blur();
+        }
+      });
+      title.appendChild(input);
+      focusInputWithCaret(input, todo.id);
+    } else {
+      const displayTitle = todo.title.trim() ? todo.title : getPlaceholder(true);
+      title.textContent = displayTitle;
+      title.classList.toggle('placeholder-text', !todo.title.trim());
+      title.addEventListener('click', (e) => {
+        const offset = getCaretOffsetFromClick(title, e);
+        editingId = todo.id;
+        pendingCaret = { id: todo.id, offset };
+        render();
+      });
+    }
+
+    li.appendChild(checkbox);
+    li.appendChild(title);
+
+    const doneTime = document.createElement('div');
+    doneTime.className = 'done-time';
+    doneTime.textContent = formatDoneAt(todo.doneAt || todo.createdAt);
+    li.appendChild(doneTime);
+    doneList.appendChild(li);
+  });
+}
+
 function reorder(from, to) {
-  if (from === to || Number.isNaN(from) || Number.isNaN(to)) return;
-  const [item] = stack.splice(from, 1);
-  stack.splice(to, 0, item);
+  const active = getActiveTodos();
+  const fromId = active[from]?.id;
+  const toId = active[to]?.id;
+  if (!fromId || !toId || fromId === toId) return;
+  const fromIndex = stack.findIndex((t) => t.id === fromId);
+  const toIndex = stack.findIndex((t) => t.id === toId);
+  if (fromIndex === -1 || toIndex === -1) return;
+  const [item] = stack.splice(fromIndex, 1);
+  stack.splice(toIndex, 0, item);
   saveStack();
 }
 
@@ -278,10 +382,11 @@ function handleMenu(action) {
             title: String(item.title),
             createdAt: item.createdAt,
             done: Boolean(item.done),
+            doneAt: item.doneAt || null,
           };
         });
         if (confirm('Replace current stack with imported data?')) {
-          stack = sanitized.filter((t) => !t.done);
+          stack = sanitized;
           saveStack();
           modal.close();
         }
@@ -333,11 +438,13 @@ function setupMenu() {
 function setupNav() {
   mainViewBtn.addEventListener('click', () => switchView('main'));
   listViewBtn.addEventListener('click', () => switchView('list'));
+  doneViewBtn.addEventListener('click', () => switchView('done'));
 }
 
 function render() {
   renderMainView();
   renderListView();
+  renderDoneView();
 }
 
 function setupShortcuts() {
@@ -350,9 +457,9 @@ function setupShortcuts() {
     }
     if (e.key.toLowerCase() === 'd' || e.key === 'Delete') {
       e.preventDefault();
-      const top = stack[0];
+      const top = getActiveTodos()[0];
       if (top) {
-        markDone(top.id);
+        setDoneState(top.id, true);
       }
     }
   });

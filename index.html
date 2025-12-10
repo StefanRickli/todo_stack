@@ -12,6 +12,7 @@
     <nav class="view-switch">
       <button id="mainViewBtn" class="tab active" aria-label="Main view">Main</button>
       <button id="listViewBtn" class="tab" aria-label="List view">List</button>
+      <button id="doneViewBtn" class="tab" aria-label="Done view">Done</button>
     </nav>
     <div class="menu">
       <button id="menuButton" class="icon-button" aria-label="Open menu" aria-haspopup="true">&#9776;</button>
@@ -31,6 +32,11 @@
     <section id="listView" class="view">
       <ul id="todoList" class="list"></ul>
       <div id="emptyList" class="empty">No todos in the stack.</div>
+    </section>
+
+    <section id="doneView" class="view">
+      <ul id="doneList" class="list"></ul>
+      <div id="emptyDone" class="empty">No completed todos yet.</div>
     </section>
   </main>
 

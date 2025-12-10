@@ -187,6 +187,14 @@ main {
   line-height: 1.4;
 }
 
+.done-time {
+  margin-left: 12px;
+  color: var(--muted);
+  font-size: 14px;
+  white-space: nowrap;
+  text-align: right;
+}
+
 .title.placeholder-text {
   color: var(--muted);
 }
